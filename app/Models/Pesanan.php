@@ -16,6 +16,33 @@ class Pesanan extends Model
         'tgl_pesanan',
         'status_pesanan',
         'total_harga',
+        'bukti_penerimaan',
+        'alamat_pengiriman',
+        'catatan',
+        'bukti_pembayaran',
+        'payment_deadline',
+        'is_paid',
+        'rating',
+        'review',
+        'review_images',
+        'paid_at',
+        'completed_at',
+        'rejection_reason',
+    ];
+
+    protected $casts = [
+        'review_images' => 'array',
+        'is_paid' => 'boolean',
+        'rating' => 'decimal:1',
+        'payment_deadline' => 'datetime',
+        'paid_at' => 'datetime',
+        'completed_at' => 'datetime',
+    ];
+
+    protected $appends = [
+        'bukti_pembayaran_url',
+        'bukti_penerimaan_url',
+        'review_images_urls'
     ];
 
     /**
@@ -40,5 +67,36 @@ class Pesanan extends Model
     public function detail()
     {
         return $this->hasMany(DetailPesanan::class, 'pesanan_id');
+    }
+
+    // Accessors
+
+    public function getBuktiPembayaranUrlAttribute()
+    {
+        if (!$this->bukti_pembayaran) {
+            return null;
+        }
+
+        return asset('storage/' . $this->bukti_pembayaran);
+    }
+
+    public function getBuktiPenerimaanUrlAttribute()
+    {
+        if (!$this->bukti_penerimaan) {
+            return null;
+        }
+
+        return asset('storage/' . $this->bukti_penerimaan);
+    }
+
+    public function getReviewImagesUrlsAttribute()
+    {
+        if (!$this->review_images) {
+            return [];
+        }
+
+        return array_map(function($path) {
+            return asset('storage/' . $path);
+        }, $this->review_images);
     }
 }

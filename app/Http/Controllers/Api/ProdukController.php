@@ -62,4 +62,58 @@ class ProdukController extends Controller
             'produk' => new ProdukResource($produk->load('kategori'))
         ], 201);
     }
+
+    /**
+     * Mengupdate produk yang sudah ada
+     */
+    public function update(Request $request, Produk $produk)
+    {
+        $user = $request->user();
+        if ($user->tipe_user != 'penjual') {
+            return response()->json(['message' => 'Hanya produsen yang bisa mengupdate produk'], 403);
+        }
+
+        // Pastikan produk ini milik user yang sedang login
+        if ($produk->user_id != $user->id) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk mengupdate produk ini'], 403);
+        }
+
+        $validatedData = $request->validate([
+            'kategori_id' => 'sometimes|required|exists:kategori_produk,id',
+            'nama_produk' => 'sometimes|required|string|max:45',
+            'deskripsi_produk' => 'nullable|string',
+            'harga' => 'sometimes|required|numeric|min:0',
+            'stok' => 'sometimes|required|integer|min:0',
+            'satuan' => 'sometimes|required|string|max:50',
+        ]);
+
+        $produk->update($validatedData);
+
+        return response()->json([
+            'message' => 'Produk berhasil diupdate',
+            'produk' => new ProdukResource($produk->load('kategori'))
+        ], 200);
+    }
+
+    /**
+     * Menghapus produk
+     */
+    public function destroy(Request $request, Produk $produk)
+    {
+        $user = $request->user();
+        if ($user->tipe_user != 'penjual') {
+            return response()->json(['message' => 'Hanya produsen yang bisa menghapus produk'], 403);
+        }
+
+        // Pastikan produk ini milik user yang sedang login
+        if ($produk->user_id != $user->id) {
+            return response()->json(['message' => 'Anda tidak memiliki akses untuk menghapus produk ini'], 403);
+        }
+
+        $produk->delete();
+
+        return response()->json([
+            'message' => 'Produk berhasil dihapus'
+        ], 200);
+    }
 }

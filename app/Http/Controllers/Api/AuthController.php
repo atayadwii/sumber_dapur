@@ -36,29 +36,44 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Registrasi berhasil',
-            'user' => new UserResource($user)
+            'user' => [
+                'id' => $user->id,
+                'nama' => $user->nama,
+                'email' => $user->email,
+                'noHp' => $user->no_hp,
+                'tipeUser' => $user->tipe_user == 'penjual' ? 'Producer' : 'Buyer',
+                'tglDaftar' => $user->tgl_daftar,
+            ]
         ], 201);
     }
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
+        $validated = $request->validate([
             'email' => 'required|string|email',
             'password' => 'required|string',
         ]);
 
-        if (!Auth::attempt($credentials)) {
+        $user = User::where('email', $validated['email'])->first();
+
+        if (!$user || !Hash::check($validated['password'], $user->password)) {
             return response()->json(['message' => 'Email atau password salah'], 401);
         }
 
-        $user = $request->user();
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Login berhasil',
             'token' => $token,
             'token_type' => 'Bearer',
-            'user' => new UserResource($user),
+            'user' => [
+                'id' => $user->id,
+                'nama' => $user->nama,
+                'email' => $user->email,
+                'noHp' => $user->no_hp,
+                'tipeUser' => $user->tipe_user == 'penjual' ? 'Producer' : 'Buyer',
+                'tglDaftar' => $user->tgl_daftar,
+            ],
         ]);
     }
 
@@ -70,6 +85,14 @@ class AuthController extends Controller
 
     public function user(Request $request)
     {
-        return new UserResource($request->user());
+        $user = $request->user();
+        return response()->json([
+            'id' => $user->id,
+            'nama' => $user->nama,
+            'email' => $user->email,
+            'noHp' => $user->no_hp,
+            'tipeUser' => $user->tipe_user == 'penjual' ? 'Producer' : 'Buyer',
+            'tglDaftar' => $user->tgl_daftar,
+        ]);
     }
 }

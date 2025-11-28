@@ -25,12 +25,22 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // Pesanan (Checkout)
     Route::post('/pesanan', [PesananController::class, 'store']);
     Route::get('/pesanan', [PesananController::class, 'index']); // Untuk pembeli & penjual
+    Route::put('/pesanan/{id}/status', [PesananController::class, 'updateStatus']); // Update status (penjual)
+    Route::post('/pesanan/{id}/complete', [PesananController::class, 'completeOrder']); // Complete order (pembeli)
+    
+    // Payment Validation Routes
+    Route::post('/pesanan/{id}/upload-payment', [PesananController::class, 'uploadPaymentProof']); // Upload bukti pembayaran (pembeli)
+    Route::post('/pesanan/{id}/upload-bukti-pembayaran', [PesananController::class, 'uploadPaymentProof']); // Alias untuk Flutter
+    Route::post('/pesanan/{id}/confirm-payment', [PesananController::class, 'confirmPayment']); // Konfirmasi pembayaran (penjual)
+    Route::post('/pesanan/{id}/konfirmasi-pembayaran', [PesananController::class, 'confirmPayment']); // Alias untuk Flutter
+    Route::post('/pesanan/{id}/review', [PesananController::class, 'submitReview']); // Submit rating & review (pembeli)
+    Route::post('/pesanan/{id}/selesaikan', [PesananController::class, 'submitReview']); // Alias untuk Flutter
 
     // Khusus Produsen/Penjual
     Route::prefix('produsen')->group(function () {
         Route::get('/produk', [ProdukController::class, 'produkProdusen']); // Lihat produk sendiri
         Route::post('/produk', [ProdukController::class, 'store']); // Tambah produk baru
-        // Route::put('/produk/{produk}', [ProdukController::class, 'update']);
-        // Route::delete('/produk/{produk}', [ProdukController::class, 'destroy']);
+        Route::put('/produk/{produk}', [ProdukController::class, 'update']); // Update produk
+        Route::delete('/produk/{produk}', [ProdukController::class, 'destroy']); // Hapus produk
     });
 });
