@@ -27,6 +27,9 @@ class PesananController extends Controller
             'items.*.produk_id' => 'required|exists:produk,id',
             'items.*.jumlah' => 'required|integer|min:1',
         ]);
+        
+        // Pastikan 'id' tidak dikirim dari Flutter untuk menghindari override auto-increment
+        unset($validatedData['id']);
 
         try {
             $createdOrder = DB::transaction(function () use ($pembeli, $validatedData) {
@@ -70,6 +73,9 @@ class PesananController extends Controller
                     'status_pesanan' => 'menunggu_pembayaran',
                     'total_harga' => $total_harga,
                 ]);
+                
+                // Refresh untuk memastikan ID dari database sudah ter-load
+                $pesanan->refresh();
 
                 // 2. Buat Detail Pesanan
                 $pesanan->detail()->createMany($itemsToCreate);
@@ -82,10 +88,14 @@ class PesananController extends Controller
                 return $pesanan;
             });
 
+            // Load relationships untuk response lengkap
+            $createdOrder->load(['detail.produk', 'pembeli', 'penjual']);
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Pesanan berhasil dibuat. Silakan upload bukti pembayaran.',
-                'pesanan_id' => $createdOrder->id
+                'pesanan_id' => $createdOrder->id,
+                'pesanan' => $createdOrder
             ], 201);
 
         } catch (\Exception $e) {
@@ -259,10 +269,19 @@ class PesananController extends Controller
                 'status_pesanan' => 'menunggu_konfirmasi',
             ]);
 
+            $pesanan->refresh();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Bukti pembayaran berhasil diupload. Menunggu konfirmasi penjual.',
-                'pesanan' => $pesanan->fresh(['pembeli', 'penjual', 'detail.produk'])
+                'pesanan' => [
+                    'id' => $pesanan->id,
+                    'status_pesanan' => $pesanan->status_pesanan,
+                    'total_harga' => $pesanan->total_harga,
+                    'bukti_pembayaran_url' => $pesanan->bukti_pembayaran_url,
+                    'created_at' => $pesanan->created_at,
+                    'updated_at' => $pesanan->updated_at,
+                ]
             ], 200);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -339,10 +358,23 @@ class PesananController extends Controller
                 $message = 'Pembayaran ditolak. Pesanan dibatalkan.';
             }
 
+            // Refresh dan load relationships yang diperlukan saja
+            $pesanan->refresh();
+            
             return response()->json([
                 'success' => true,
                 'message' => $message,
-                'pesanan' => $pesanan->fresh(['pembeli', 'penjual', 'detail.produk'])
+                'pesanan' => [
+                    'id' => $pesanan->id,
+                    'status_pesanan' => $pesanan->status_pesanan,
+                    'total_harga' => $pesanan->total_harga,
+                    'is_paid' => $pesanan->is_paid,
+                    'paid_at' => $pesanan->paid_at,
+                    'bukti_pembayaran_url' => $pesanan->bukti_pembayaran_url,
+                    'rejection_reason' => $pesanan->rejection_reason,
+                    'created_at' => $pesanan->created_at,
+                    'updated_at' => $pesanan->updated_at,
+                ]
             ], 200);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
